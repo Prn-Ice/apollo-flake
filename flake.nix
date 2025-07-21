@@ -63,7 +63,7 @@
             ui = pkgs.buildNpmPackage {
               inherit src version;
               pname = "apollo-ui";
-              npmDepsHash = "sha256-e0TwmkkWnyoUbdzoGvB4nUQR/128QD90b0A3MDEPBAQ=";
+              npmDepsHash = "sha256-EW6NY2kQLL4UTXedERUfEVsxxPucQ6PzmJ8Yju7DmbU=";
 
               postPatch = ''
                 cp ${./package-lock.json} ./package-lock.json
