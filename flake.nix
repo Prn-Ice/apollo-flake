@@ -50,14 +50,14 @@
         in
           stdenv'.mkDerivation rec {
             pname = "sunshine";
-            version = "master";
-             src = pkgs.fetchFromGitHub {
-               owner = "ClassicOldSong";
-               repo = "Apollo";
-               rev = "v0.4.3";
-               hash = "sha256-werMaz6FFB6IsZr/AHWSjyn/J/2CYba98aVCdNICVl0=";
-               fetchSubmodules = true;
-             };
+            version = "0.4.3";
+            src = pkgs.fetchFromGitHub {
+              owner = "ClassicOldSong";
+              repo = "Apollo";
+              rev = "v${version}";
+              hash = "sha256-werMaz6FFB6IsZr/AHWSjyn/J/2CYba98aVCdNICVl0=";
+              fetchSubmodules = true;
+            };
 
             # build webui
             ui = pkgs.buildNpmPackage {
@@ -82,6 +82,7 @@
                 pkgs.python3
                 pkgs.makeWrapper
                 pkgs.wayland-scanner
+                # Avoid fighting upstream's usage of vendored ffmpeg libraries
                 pkgs.autoPatchelfHook
               ]
               ++ pkgs.lib.optionals cudaSupport [
@@ -93,6 +94,7 @@
             buildInputs =
               [
                 pkgs.avahi
+                pkgs.ffmpeg
                 pkgs.libevdev
                 pkgs.libpulseaudio
                 pkgs.xorg.libX11
@@ -105,6 +107,8 @@
                 pkgs.libopus
                 pkgs.libdrm
                 pkgs.wayland
+                pkgs.wayland-protocols
+                pkgs.wlr-protocols
                 pkgs.libffi
                 pkgs.libcap
                 pkgs.curl
@@ -126,6 +130,8 @@
                 pkgs.sysprof
                 pkgs.glib
                 pkgs.svt-av1
+                pkgs.libsysprof-capture
+                pkgs.lerc
                 (
                   if pkgs.lib?libappindicator
                   then pkgs.libappindicator
@@ -164,6 +170,8 @@
                 (pkgs.lib.cmakeFeature "SUNSHINE_PUBLISHER_WEBSITE" "https://nixos.org")
                 (pkgs.lib.cmakeFeature "SUNSHINE_PUBLISHER_ISSUE_URL" "https://github.com/NixOS/nixpkgs/issues")
                 "-DFETCHCONTENT_SOURCE_DIR_BOOST=${boostExtractedSrc}"
+                (pkgs.lib.cmakeFeature "FFMPEG_PREPARED_BINARIES" "${pkgs.ffmpeg}")
+                (pkgs.lib.cmakeBool "SUNSHINE_SYSTEM_WAYLAND_PROTOCOLS" true)
               ]
               ++ pkgs.lib.optionals (!cudaSupport) [
                 (pkgs.lib.cmakeBool "SUNSHINE_ENABLE_CUDA" false)
@@ -177,14 +185,19 @@
             };
 
             postPatch = ''
+              # remove upstream dependency on systemd and udev
               substituteInPlace cmake/packaging/linux.cmake \
                 --replace-fail 'find_package(Systemd)' "" \
                 --replace-fail 'find_package(Udev)' ""
 
+              # don't look for npm since we build webui separately
               substituteInPlace cmake/targets/common.cmake \
                 --replace-fail 'find_program(NPM npm REQUIRED)' ""
 
-              substituteInPlace packaging/linux/sunshine.desktop \
+              # substituteInPlace cmake/compile_definitions/linux.cmake \
+              #   --replace-fail '"''${CMAKE_SOURCE_DIR}/third-party/wlr-protocols"' '"${pkgs.wlr-protocols}/share/wlr-protocols"'
+
+              substituteInPlace packaging/linux/dev.lizardbyte.app.Sunshine.desktop \
                 --subst-var-by PROJECT_NAME 'Sunshine' \
                 --subst-var-by PROJECT_DESCRIPTION 'Self-hosted game stream host for Moonlight' \
                 --subst-var-by SUNSHINE_DESKTOP_ICON 'sunshine' \
@@ -217,7 +230,7 @@
             '';
 
             postInstall = ''
-              install -Dm644 ../packaging/linux/${pname}.desktop $out/share/applications/${pname}.desktop
+              install -Dm644 ../packaging/linux/dev.lizardbyte.app.Sunshine.desktop $out/share/applications/dev.lizardbyte.app.Sunshine.desktop
             '';
 
             meta = with pkgs.lib; {
