@@ -54,8 +54,8 @@
              src = pkgs.fetchFromGitHub {
                owner = "ClassicOldSong";
                repo = "Apollo";
-               rev = "d5042e4277e223c8acd05652ace5399ae2ebde48";
-               hash = "sha256-qmqyDtbig6Yc22ofJGZJHsNOYxfx0ZgOWsPYrTUCqYY=";
+               rev = "v0.4.3";
+               hash = "sha256-werMaz6FFB6IsZr/AHWSjyn/J/2CYba98aVCdNICVl0=";
                fetchSubmodules = true;
              };
 
