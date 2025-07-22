@@ -54,8 +54,8 @@
             src = pkgs.fetchFromGitHub {
               owner = "ClassicOldSong";
               repo = "Apollo";
-              rev = "v${version}";
-              hash = "sha256-werMaz6FFB6IsZr/AHWSjyn/J/2CYba98aVCdNICVl0=";
+              rev = "53aa222e8e22adc6fcdc9ba4ed6fce2fe5c09ea9";
+              hash = "sha256-nx+bepOF8W0UktI/vgsgpk5PMC5slbAKohCmgqR47t0=";
               fetchSubmodules = true;
             };
 
@@ -94,7 +94,6 @@
             buildInputs =
               [
                 pkgs.avahi
-                pkgs.ffmpeg
                 pkgs.libevdev
                 pkgs.libpulseaudio
                 pkgs.xorg.libX11
@@ -107,8 +106,6 @@
                 pkgs.libopus
                 pkgs.libdrm
                 pkgs.wayland
-                pkgs.wayland-protocols
-                pkgs.wlr-protocols
                 pkgs.libffi
                 pkgs.libcap
                 pkgs.curl
@@ -170,8 +167,6 @@
                 (pkgs.lib.cmakeFeature "SUNSHINE_PUBLISHER_WEBSITE" "https://nixos.org")
                 (pkgs.lib.cmakeFeature "SUNSHINE_PUBLISHER_ISSUE_URL" "https://github.com/NixOS/nixpkgs/issues")
                 "-DFETCHCONTENT_SOURCE_DIR_BOOST=${boostExtractedSrc}"
-                (pkgs.lib.cmakeFeature "FFMPEG_PREPARED_BINARIES" "${pkgs.ffmpeg}")
-                (pkgs.lib.cmakeBool "SUNSHINE_SYSTEM_WAYLAND_PROTOCOLS" true)
               ]
               ++ pkgs.lib.optionals (!cudaSupport) [
                 (pkgs.lib.cmakeBool "SUNSHINE_ENABLE_CUDA" false)
@@ -185,6 +180,10 @@
             };
 
             postPatch = ''
+              mv packaging/linux/dev.lizardbyte.app.Sunshine.desktop packaging/linux/com.SudoMaker.dev.Apollo.desktop
+              mv packaging/linux/dev.lizardbyte.app.Sunshine.terminal.desktop packaging/linux/com.SudoMaker.dev.Apollo.terminal.desktop
+              mv packaging/linux/dev.lizardbyte.app.Sunshine.metainfo.xml packaging/linux/com.SudoMaker.dev.Apollo.metainfo.xml
+
               # remove upstream dependency on systemd and udev
               substituteInPlace cmake/packaging/linux.cmake \
                 --replace-fail 'find_package(Systemd)' "" \
@@ -194,19 +193,11 @@
               substituteInPlace cmake/targets/common.cmake \
                 --replace-fail 'find_program(NPM npm REQUIRED)' ""
 
-              # substituteInPlace cmake/compile_definitions/linux.cmake \
-              #   --replace-fail '"''${CMAKE_SOURCE_DIR}/third-party/wlr-protocols"' '"${pkgs.wlr-protocols}/share/wlr-protocols"'
-
-              substituteInPlace packaging/linux/dev.lizardbyte.app.Sunshine.desktop \
-                --subst-var-by PROJECT_NAME 'Sunshine' \
-                --subst-var-by PROJECT_DESCRIPTION 'Self-hosted game stream host for Moonlight' \
-                --subst-var-by SUNSHINE_DESKTOP_ICON 'sunshine' \
-                --subst-var-by CMAKE_INSTALL_FULL_DATAROOTDIR "$out/share" \
+              substituteInPlace packaging/linux/com.SudoMaker.dev.Apollo.desktop \
                 --replace-fail '/usr/bin/env systemctl start --u sunshine' 'sunshine'
 
               substituteInPlace packaging/linux/sunshine.service.in \
                 --subst-var-by PROJECT_DESCRIPTION 'Self-hosted game stream host for Moonlight' \
-                --subst-var-by SUNSHINE_EXECUTABLE_PATH $out/bin/sunshine \
                 --replace-fail '/bin/sleep' '${pkgs.lib.getExe' pkgs.coreutils "sleep"}'
             '';
 
@@ -230,7 +221,7 @@
             '';
 
             postInstall = ''
-              install -Dm644 ../packaging/linux/dev.lizardbyte.app.Sunshine.desktop $out/share/applications/dev.lizardbyte.app.Sunshine.desktop
+              install -Dm644 ../packaging/linux/com.SudoMaker.dev.Apollo.desktop $out/share/applications/com.SudoMaker.dev.Apollo.desktop
             '';
 
             meta = with pkgs.lib; {
